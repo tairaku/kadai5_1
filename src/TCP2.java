@@ -1,14 +1,24 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /*
- * 今の場所から最も近い場所に進んでいく方法。
- * その後、交差があるか調べ、交差があったら交差しないようにする。
+ * TCP.javaは最初のスタート地点が0番目だったので、
+ * TCP2.javaでは、スタート地点を変え、その中で最も距離が短くすんだものを
+ * 最終的に出力。
  */
 
-public class TCP {
+public class TCP2 {
+
 	static int n,route[];
 	static double distance[][];
 	static double Length;
+	
+	static double MinLength[];
+	static int Minroute[][];
+	
 
     /** 出力 と　ファイル書き込み*/
     private static void printTour(String outputfile){
@@ -36,14 +46,14 @@ public class TCP {
     }
 
     /*greedy法
-     * スタート地点は0
-     * */
-    public static void Tour() {
+     スタート地点を引数で取ってくる。
+     */
+    public static void Tour(int start) {
         
         boolean used[] = new boolean[n];
         for (int i = 0; i < n; i++) used[i] = false;
         
-        int current = 0; //はじまり
+        int current = start; //はじまり
         for (int i = 0; i < n; i++) {
         	route[i] = current;  
         	used[current] = true;
@@ -75,7 +85,7 @@ public class TCP {
             double dif = (distance[a1][b1] + distance[a2][b2])- (distance[a1][a2] + distance[b1][b2]) ;
             if (dif < 0) {  // 解を発見したら
                 Length += dif;
-                System.out.println("距離 : " + Length);
+                //System.out.println("距離 : " + Length);
                 for (int i = 0; i < (k - a) / 2; i++) {  // 実現できたら
                     int swap = route[(a + 1 + i) % n];
                     route[(a + 1 + i) % n] = route[(k - i) % n];
@@ -84,7 +94,7 @@ public class TCP {
                 return true;  
             }
         }
-        return false;  // 実現できなかったらfalse
+        return false;  // 改良してない
     }
 
 
@@ -98,9 +108,9 @@ public class TCP {
     	//final int n=8;
     	//final int n=16;
     	//final int n=64;
-    	//final int n=128;
+    	final int n=128;
     	//final int n=512;
-    	final int n=2048;
+    	//final int n=2048;
 
     	
         System.out.println(n);
@@ -127,12 +137,50 @@ public class TCP {
 
         return distance;
     }
+    
+    public static int mincheck(double[] minlength){
+    	double mincheck=Double.MAX_VALUE;
+    	int minstart=0;
+    	for(int i=0;i<n;i++){
+    		if(minlength[i] < mincheck){
+    			mincheck=minlength[i];
+    			minstart=i;
+    		}
+    	}
+    	return minstart;
+    }
 
     public static void main(String[] args) throws IOException{
         distance = readfile(args[0]);  
-        n = distance.length;  
-        route = new int[n];  
-        Tour();
+        n = distance.length; 
+        route = new int[n];
+        MinLength=new double[n];
+        int beststart;
+        
+        for(int i=0;i<n;i++){
+    		Tour(i);
+    		System.out.println("nearest neighbor法");  
+            printTour(args[1]);
+            for (int j = 0,l=0; j < l + n; j++){  // 交差がないように
+                if (notcross(j)){
+                	l = j + 1;
+                }
+            }
+            MinLength[i]=Length;
+            
+            System.out.println("改善");  
+            printTour(args[1]);
+    	}
+        
+        
+        
+        for(int i=0;i<n;i++){
+        	System.out.println(i+" : "+MinLength[i]);
+        }
+        
+        beststart = mincheck(MinLength);
+        Tour(beststart);
+        System.out.println("----------------------------"); 
         System.out.println("nearest neighbor法");  
         printTour(args[1]);
         for (int i = 0,l=0; i < l + n; i++){  // 交差がないように
@@ -140,8 +188,9 @@ public class TCP {
             	l = i + 1;
             }
         }
-        System.out.println("改善"); //最終的な解を出力 
+        System.out.println("改善");  
         printTour(args[1]);
-    	
+        
     }
 }
+
